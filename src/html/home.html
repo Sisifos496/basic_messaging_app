@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.socket.io/socket.io-3.0.0.js"></script>
+    <title>Chelly - Home</title>
+</head>
+<body>
+    <ul id="messageList"></ul>
+    <input placeholder="message" id="messageInput">
+    <button id="sendButton">Send</button>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js';
+        import { collection, addDoc, getDocs, getFirestore } from 'https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAolMdJsOZ-CbuILNkO9wrGbes10I2-ysc",
+            authDomain: "habit-tracker-22023.firebaseapp.com",
+            projectId: "habit-tracker-22023",
+            storageBucket: "habit-tracker-22023.appspot.com",
+            messagingSenderId: "802818774292",
+            appId: "1:802818774292:web:d645640da49908c67a5e01"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const retrieveImportantCookie = () => {
+            const name = "important" + "=";
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const cookieArray = decodedCookie.split(';');
+
+            for (let i = 0; i < cookieArray.length; i++) {
+                const cookie = cookieArray[i].trim();
+                if (cookie.indexOf(name) === 0) {
+                    return cookie.substring(name.length, cookie.length);
+                }
+            }
+            return null;
+        };
+
+        const initializeMessages = async() => {
+            const messageSnapshot = await getDocs(collection(db, "messages"));
+
+            messageSnapshot.forEach((doc) => {
+                const el = document.createElement('li');
+                el.innerHTML = `${doc.data().messageInfo}`;
+                document.getElementById('messageList').appendChild(el);
+            })
+        }
+
+        initializeMessages();
+
+        const retrievingUsernameMail = async () => {
+            const important = retrieveImportantCookie();
+
+            if (!important) {
+                console.error("Important cookie not found.");
+                return;
+            }
+
+            const loggedUser = {
+                password: important
+            };
+
+            const querySnapshot = await getDocs(collection(db, "users"));
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data().sentUser;
+
+                if (loggedUser.password == userData.password) {
+                    sessionStorage.setItem("username", userData.name);
+                    sessionStorage.setItem("mail", userData.mail);
+                }
+            });
+        };
+
+        const socket = io('ws://localhost:5000');
+
+        socket.on('message', text => {
+            retrievingUsernameMail().then(() => {
+                const storingMessagesInDB = async () => {
+                    const message = {
+                        messageInfo: `${sessionStorage.getItem("username")} - "${text}"`
+                    };
+
+                    try {
+                        const docRef = await addDoc(collection(db, "messages"), message);
+                        console.log("Message stored in the database:", docRef.id);
+                    } catch (error) {
+                        console.error("Error storing message in DB:", error);
+                    }
+                };
+
+                storingMessagesInDB();
+
+                const el = document.createElement('li');
+                el.innerHTML = `${sessionStorage.getItem("username")} - "${text}"`;
+                document.getElementById('messageList').appendChild(el);
+            });
+        });
+
+        document.getElementById('sendButton').onclick = () => {
+            const text = document.getElementById('messageInput').value;
+            socket.emit('message', text);
+        };
+    </script>
+</body>
+</html>
