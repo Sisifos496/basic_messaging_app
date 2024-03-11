@@ -6,12 +6,12 @@ const { collection, addDoc, getDocs, getFirestore } = require("firebase/firestor
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAolMdJsOZ-CbuILNkO9wrGbes10I2-ysc",
-  authDomain: "habit-tracker-22023.firebaseapp.com",
-  projectId: "habit-tracker-22023",
-  storageBucket: "habit-tracker-22023.appspot.com",
-  messagingSenderId: "802818774292",
-  appId: "1:802818774292:web:d645640da49908c67a5e01"
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
 };
 
 // Initialize Firebase
